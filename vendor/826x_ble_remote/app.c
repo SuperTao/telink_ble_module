@@ -735,6 +735,7 @@ _attribute_ram_code_ void  ble_remote_set_sleep_wakeup (u8 e, u8 *p, int n)
 
 void user_init()
 {
+	app_uart_test_init();
 
 	blc_app_loadCustomizedParameters();  //load customized freq_offset cap value and tp value
 
@@ -985,7 +986,7 @@ void main_loop (void)
 {
 	tick_loop ++;
 
-
+	app_uart_test_start();
 	////////////////////////////////////// BLE entry /////////////////////////////////
 	blt_sdk_main_loop();
 
