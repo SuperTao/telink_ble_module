@@ -72,14 +72,14 @@ MYFIFO_INIT(blt_txfifo, 40, 16);
 //	 Adv Packet, Response Packet
 //////////////////////////////////////////////////////////////////////////////
 const u8	tbl_advData[] = {
-	 0x05, 0x09, 't', 'h', 'i', 'd',
+	 0x05, 0x09, 'R', 'F', 'I', 'D',
 	 0x02, 0x01, 0x05, 							// BLE limited discoverable mode and BR/EDR not supported
 	 0x03, 0x19, 0x80, 0x01, 					// 384, Generic Remote Control, Generic category
 	 0x05, 0x02, 0x12, 0x18, 0x0F, 0x18,		// incomplete list of service class UUIDs (0x1812, 0x180F)
 };
 
 const u8	tbl_scanRsp [] = {
-		 0x08, 0x09, 't', 'R', 'e', 'm', 'o', 't', 'e',
+		 0x05, 0x09, 'R', 'F', 'I', 'D',
 	};
 
 
