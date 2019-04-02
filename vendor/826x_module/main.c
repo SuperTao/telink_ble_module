@@ -33,11 +33,14 @@ extern void user_init();
 _attribute_ram_code_ void irq_handler(void)
 {
 	irq_blt_sdk_handler ();
-
+	app_uart_test_irq_proc();
+#if 0
 #if (HCI_ACCESS==HCI_USE_UART)
 	unsigned char irqS = reg_dma_rx_rdy0;
+
     if(irqS & FLD_DMA_UART_RX)	//rx
     {
+
     	reg_dma_rx_rdy0 = FLD_DMA_UART_RX;
     	u8* w = hci_rx_fifo.p + (hci_rx_fifo.wptr & (hci_rx_fifo.num-1)) * hci_rx_fifo.size;
     	if(w[0]!=0)
@@ -55,6 +58,7 @@ _attribute_ram_code_ void irq_handler(void)
 		uart_clr_tx_busy_flag();
 #endif
     }
+#endif
 #endif
 }
 

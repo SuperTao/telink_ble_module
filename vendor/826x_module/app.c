@@ -277,6 +277,7 @@ void app_power_management ()
 
 void user_init()
 {
+	app_uart_test_init();
 	blc_app_loadCustomizedParameters();  //load customized freq_offset cap value and tp value
 
 	REG_ADDR8(0x74) = 0x53;
@@ -296,6 +297,7 @@ void user_init()
 	}
     else
     {
+    	// 随机生成MAC地址
         //TODO : should write mac to flash after pair OK
         tbl_mac[0] = (u8)rand();
         flash_write_page (CFG_ADR_MAC, 6, tbl_mac);
@@ -361,13 +363,15 @@ void user_init()
 
 
 	////////////////// SPP initialization ///////////////////////////////////
-	#if (HCI_ACCESS==HCI_USE_USB)
-		blt_set_bluetooth_version (BLUETOOTH_VER_4_2);
+#if 0
+//	#if (HCI_ACCESS==HCI_USE_USB)
+	/*	blt_set_bluetooth_version (BLUETOOTH_VER_4_2);
 		bls_ll_setAdvChannelMap (BLT_ENABLE_ADV_37);
 		usb_bulk_drv_init (0);
 		blc_register_hci_handler (blc_hci_rx_from_usb, blc_hci_tx_to_usb);
 		bls_smp_enableParing (SMP_PARING_CONN_TRRIGER );
-	#else	//uart
+*/
+//	#else	//uart
 		//one gpio should be configured to act as the wakeup pin if in power saving mode; pending
 		//todo:uart init here
 #if __PROJECT_8266_MODULE__
@@ -378,20 +382,22 @@ void user_init()
 		gpio_write (GPIO_UTX, 1);			//pull-high RX to avoid mis-trig by floating signal
 		gpio_write (GPIO_URX, 1);			//pull-high RX to avoid mis-trig by floating signal
 #else
-		gpio_set_input_en(GPIO_PB2, 1);
-		gpio_set_input_en(GPIO_PB3, 1);
-		gpio_setup_up_down_resistor(GPIO_PB2, PM_PIN_PULLUP_1M);
-		gpio_setup_up_down_resistor(GPIO_PB3, PM_PIN_PULLUP_1M);
-		uart_io_init(UART_GPIO_8267_PB2_PB3);
+		gpio_set_input_en(GPIO_PA6, 1);
+		gpio_set_input_en(GPIO_PA7, 1);
+		gpio_setup_up_down_resistor(GPIO_PA6, PM_PIN_PULLUP_1M);
+		gpio_setup_up_down_resistor(GPIO_PA7, PM_PIN_PULLUP_1M);
+		uart_io_init(UART_GPIO_8267_PA6_PA7);
 #endif
+
 		reg_dma_rx_rdy0 = FLD_DMA_UART_RX | FLD_DMA_UART_TX; //clear uart rx/tx status
 		CLK16M_UART115200;
+
 		uart_BuffInit(hci_rx_fifo_b, hci_rx_fifo.size, hci_tx_fifo_b);
 		extern int rx_from_uart_cb (void);
 		extern int tx_to_uart_cb (void);
 		blc_register_hci_handler(rx_from_uart_cb,tx_to_uart_cb);				//customized uart handler
-	#endif
-
+//	#endif
+#endif
 	extern int event_handler(u32 h, u8 *para, int n);
 	blc_hci_registerControllerEventHandler(event_handler);		//register event callback
 	bls_hci_mod_setEventMask_cmd(0xffff);			//enable all 15 events,event list see ble_ll.h
@@ -430,7 +436,7 @@ void main_loop ()
 {
 	static u32 tick_loop;
 	tick_loop ++;
-
+	app_uart_test_start();
 	////////////////////////////////////// BLE entry /////////////////////////////////
 	blt_sdk_main_loop();
 
