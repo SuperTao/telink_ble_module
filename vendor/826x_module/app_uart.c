@@ -33,7 +33,7 @@
 
 #if UART_DMA_MODE_EN
 	unsigned char uart_rx_irq = 0, uart_tx_irq = 0;
-	#define UART_RX_BUFF_SIZE      16
+	#define UART_RX_BUFF_SIZE      100
 	#define UART_TX_BUFF_SIZE      16
 
 	__attribute__((aligned(4))) unsigned char uart_rec_buff[UART_RX_BUFF_SIZE] = {0x00,0x00,0x00,0x00,}; // the first four byte is length to receive data.
@@ -47,10 +47,12 @@ void app_uart_test_init(void){
 #if UART_DMA_MODE_EN
 	//	uart_Init(9,13,PARITY_NONE,STOP_BIT_ONE); //set baud rate, parity bit and stop bit
 	//	uart_DmaModeInit(UART_DMA_TX_IRQ_EN, UART_DMA_RX_IRQ_EN);   // enable tx and rx interrupt
-	CLK16M_UART115200;
+//	CLK16M_UART115200;
+	uart_Init(9,13,PARITY_NONE,STOP_BIT_ONE);\
+	uart_DmaModeInit(UART_DMA_TX_IRQ_DIS, UART_DMA_RX_IRQ_EN);
 
 	uart_RecBuffInit(uart_rec_buff, UART_RX_BUFF_SIZE);  //set uart rev buffer and buffer size
-	uart_txBuffInit(UART_TX_BUFF_SIZE);
+//	uart_txBuffInit(UART_TX_BUFF_SIZE);
 
 //	#if ((MCU_CORE_TYPE == MCU_CORE_8261)||(MCU_CORE_TYPE == MCU_CORE_8267)||(MCU_CORE_TYPE == MCU_CORE_8269))
 //		UART_GPIO_CFG_PC2_PC3();  //enable uart function and enable input
@@ -74,12 +76,12 @@ void app_uart_test_init(void){
 
 
 void app_uart_test_start(void){
-
 #if UART_DMA_MODE_EN
 	if(uart_rx_irq){
 		uart_rx_irq = 0;
 		/*receive buffer,the first four bytes is the length information of received data.send the received data*/
 		while(!uart_Send(uart_rec_buff));
+
 		/*transmit buffer, the first four bytes is the length information of transmitting data.the DMA module will send the data based on the length.
 		* so the useful data start from the fifth byte and start to send to other device from the fifth byte.*/
 //		while(!uart_Send(uart_tx_buff));
@@ -102,6 +104,7 @@ _attribute_ram_code_ void app_uart_test_irq_proc(void){
 		irqS = uart_IRQSourceGet(); // get the irq source and clear the irq.
 		if(irqS & UARTRXIRQ){
 			uart_rx_irq = 1;
+
 		}
 //		if(irqS & UARTTXIRQ){
 //			uart_tx_irq++;
