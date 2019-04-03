@@ -86,7 +86,7 @@ void app_uart_test_start(void){
 #if 1
 		unsigned char *data_ptr = (unsigned char *)&uart_rec_buff;
 
-		unsigned char length = sizeof(uart_rec_buff);
+		unsigned char length = strlen(&uart_rec_buff[4])+4;
 
 		while (length > 0)
 		{
@@ -96,6 +96,7 @@ void app_uart_test_start(void){
 			length -= amount_to_send;
 		}
 		while(!uart_Send(uart_rec_buff));
+//		memset(uart_rec_buff, 0, sizeof(uart_rec_buff));
 #endif
 		/*transmit buffer, the first four bytes is the length information of transmitting data.the DMA module will send the data based on the length.
 		* so the useful data start from the fifth byte and start to send to other device from the fifth byte.*/
