@@ -23,6 +23,7 @@
 #include "../../proj_lib/ble/ll/ll.h"
 #include "../../proj_lib/ble/blt_config.h"
 #include "../../proj_lib/ble/service/ble_ll_ota.h"
+#include "rfid.h"
 
 #if(__PROJECT_8261_MODULE__ || __PROJECT_8266_MODULE__ || __PROJECT_8267_MODULE__ || __PROJECT_8269_MODULE__)
 
@@ -39,7 +40,7 @@ typedef struct
 } gap_periConnectParams_t;
 
 const u16 clientCharacterCfgUUID = GATT_UUID_CLIENT_CHAR_CFG;
-
+const u16 RfidCharacterCfgUUID = 0x2909;
 const u16 extReportRefUUID = GATT_UUID_EXT_REPORT_REF;
 
 const u16 reportRefUUID = GATT_UUID_REPORT_REF;
@@ -78,7 +79,7 @@ static u8 serviceChangeCCC[2]={0,0};
 
 
 
-#define DEV_NAME                        "tModule"
+#define DEV_NAME                        "honeywellRFID"
 extern u8  ble_devName[];
 
 // Device Name Characteristic Properties
@@ -107,6 +108,7 @@ static u8 SppDataServer2ClientProp = CHAR_PROP_READ | CHAR_PROP_NOTIFY;
 u8  SppDataServer2ClientData[ATT_MTU_SIZE - 3];
 static u8 SppDataServer2ClientDataCCC[2] = {0};
 
+static u8 RfidDataCCC[2] = {0};
 // Spp data from Client to Server characteristic variables
 //CHAR_PROP_WRITE: Need response from slave, low transmission speed
 static u8 SppDataClient2ServerProp = CHAR_PROP_READ | CHAR_PROP_WRITE_WITHOUT_RSP; //CHAR_PROP_WRITE;
@@ -195,13 +197,27 @@ static u8 my_OtaProp		= CHAR_PROP_READ | CHAR_PROP_WRITE_WITHOUT_RSP;
 const u8  my_OtaName[] = {'O', 'T', 'A'};
 u8	 	my_OtaData 		= 0x00;
 
+const u8  my_RfidName[] = {'R', 'F', 'I', 'D'};
 
+u8		my_RfidDataNotify[]		= {'h', 'e', 'l', 'l', 'o'};
+static u8 	my_RfidDataProp		= CHAR_PROP_READ | CHAR_PROP_NOTIFY;
+const u8	my_RfidDataServiceUUID[16] = {0x22,0x19,0x0d,0x0c,0x0b,0x0a,0x09,0x08,0x07,0x06,0x05,0x04,0x03,0x02,0x01,0x00};
+const u8	my_RfidDataUUID[16] = {0x15,0x2B,0x0d,0x0c,0x0b,0x0a,0x09,0x08,0x07,0x06,0x05,0x04,0x03,0x02,0x01,0x00};
+//extern	int RfidDataRead(void * p);
+
+u8		my_RfidData		= 0x00;
+static u8 	my_RfidProp		= CHAR_PROP_READ | CHAR_PROP_WRITE_WITHOUT_RSP;
+const u8	my_RfidServiceUUID[16] = {0x23,0x19,0x0d,0x0c,0x0b,0x0a,0x09,0x08,0x07,0x06,0x05,0x04,0x03,0x02,0x01,0x00};
+const u8	my_RfidUUID[16] = {0x16,0x2B,0x0d,0x0c,0x0b,0x0a,0x09,0x08,0x07,0x06,0x05,0x04,0x03,0x02,0x01,0x00};
+extern	int RfidRead(void * p);
+
+extern 	int RfidWrite(void*p);
 // TM : to modify
 const attribute_t my_Attributes[] = {
 #if (TELIK_SPP_SERVICE_ENABLE)
-	{26,0,0,0,0,0},	// total num of attribute
+	{33,0,0,0,0,0},	// total num of attribute
 #else
-	{18,0,0,0,0,0},	// total num of attribute
+	{25,0,0,0,0,0},	// total num of attribute
 #endif
 
 	// 0001 - 0007  gap
@@ -233,7 +249,7 @@ const attribute_t my_Attributes[] = {
 
 	{0,ATT_PERMISSIONS_READ,2,1,(u8*)(&my_characterUUID), 		(u8*)(&SppDataServer2ClientProp), 0},				//prop
 	{0,ATT_PERMISSIONS_READ,16,sizeof(SppDataServer2ClientData),(u8*)(&TelinkSppDataServer2ClientUUID), (u8*)(SppDataServer2ClientData), 0},	//value
-	{0,ATT_PERMISSIONS_RDWR,2,2,(u8*)&clientCharacterCfgUUID,(u8*)(&SppDataServer2ClientDataCCC)},
+	{0,ATT_PERMISSIONS_RDWR,2,2,(u8*)&RfidCharacterCfgUUID,(u8*)(&SppDataServer2ClientDataCCC)},
 	{0,ATT_PERMISSIONS_READ,2,sizeof(TelinkSPPS2CDescriptor),(u8*)&userdesc_UUID,(u8*)(&TelinkSPPS2CDescriptor)},
 
 	{0,ATT_PERMISSIONS_READ,2,1,(u8*)(&my_characterUUID), 		(u8*)(&SppDataClient2ServerProp), 0},				//prop
@@ -246,6 +262,17 @@ const attribute_t my_Attributes[] = {
 	{0,ATT_PERMISSIONS_READ, 2, 1,(u8*)(&my_characterUUID), 		(u8*)(&my_OtaProp), 0},				//prop
 	{0,ATT_PERMISSIONS_RDWR,16,sizeof(my_OtaData),(u8*)(&my_OtaUUID),	(&my_OtaData), &otaWrite, &otaRead},			//value
 	{0,ATT_PERMISSIONS_READ, 2,sizeof (my_OtaName),(u8*)(&userdesc_UUID), (u8*)(my_OtaName), 0},
+
+	// RFID
+	{7,ATT_PERMISSIONS_READ,2,2,(u8*)(&my_primaryServiceUUID), 	(u8*)(&my_RfidServiceUUID), 0},
+
+	{0,ATT_PERMISSIONS_READ,2,1,(u8*)(&my_characterUUID), 		(u8*)(&my_RfidDataProp), 0},				//prop
+	{0,ATT_PERMISSIONS_READ,16,sizeof(my_RfidDataNotify),(u8*)(&my_RfidDataUUID), (u8*)(my_RfidDataNotify), 0, 0},	//value
+	{0,ATT_PERMISSIONS_RDWR,2,2,(u8*)&clientCharacterCfgUUID,(u8*)(&RfidDataCCC)},
+	{0,ATT_PERMISSIONS_READ, 2,sizeof (my_RfidName),(u8*)(&userdesc_UUID), (u8*)(my_RfidName), 0},
+
+	{0,ATT_PERMISSIONS_READ, 2, 1,(u8*)(&my_characterUUID), 		(u8*)(&my_RfidProp), 0},				//prop
+	{0,ATT_PERMISSIONS_RDWR,16,sizeof(my_RfidData),(u8*)(&my_RfidUUID),	(&my_RfidData), &RfidWrite, &RfidRead},			//value
 
 };
 

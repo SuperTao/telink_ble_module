@@ -80,8 +80,23 @@ void app_uart_test_start(void){
 	if(uart_rx_irq){
 		uart_rx_irq = 0;
 		/*receive buffer,the first four bytes is the length information of received data.send the received data*/
-		while(!uart_Send(uart_rec_buff));
+//		while(!uart_Send(uart_rec_buff));
+#define RFID_DATA_ATTRIBUTE_HANDLE 29
+//		bls_att_pushNotifyData(RFID_DATA_ATTRIBUTE_HANDLE, uart_rec_buff, sizeof(uart_rec_buff));
+#if 1
+		unsigned char *data_ptr = (unsigned char *)&uart_rec_buff;
 
+		unsigned char length = sizeof(uart_rec_buff);
+
+		while (length > 0)
+		{
+			int amount_to_send = min((20), length);
+			bls_att_pushNotifyData(RFID_DATA_ATTRIBUTE_HANDLE, data_ptr, amount_to_send);
+			data_ptr += amount_to_send;
+			length -= amount_to_send;
+		}
+		while(!uart_Send(uart_rec_buff));
+#endif
 		/*transmit buffer, the first four bytes is the length information of transmitting data.the DMA module will send the data based on the length.
 		* so the useful data start from the fifth byte and start to send to other device from the fifth byte.*/
 //		while(!uart_Send(uart_tx_buff));
@@ -104,7 +119,6 @@ _attribute_ram_code_ void app_uart_test_irq_proc(void){
 		irqS = uart_IRQSourceGet(); // get the irq source and clear the irq.
 		if(irqS & UARTRXIRQ){
 			uart_rx_irq = 1;
-
 		}
 //		if(irqS & UARTTXIRQ){
 //			uart_tx_irq++;

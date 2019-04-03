@@ -339,10 +339,13 @@ void uart_txBuffInit(unsigned short txBuffLen){
 
 void uart_BuffInit(unsigned char *recAddr, unsigned short recBuffLen, unsigned char *txAddr){
 	unsigned char bufLen;
+	//因为长度在DMA里面是16字节为单位，所以需要移动4为，相当于除16
 	bufLen = recBuffLen>>4;
+	// 接收缓存地址
 	reg_dma0_addr = (unsigned short)((unsigned int)(recAddr)); //set receive buffer address
-
+	// 清空对应的位
 	BM_CLR(reg_dma0_ctrl, FLD_DMA_BUF_SIZE);
+	//	保存接收缓存长度到寄存器中
 	reg_dma0_ctrl |= MASK_VAL(FLD_DMA_BUF_SIZE, bufLen); //set receive buffer size
 
     tx_buff = txAddr;
