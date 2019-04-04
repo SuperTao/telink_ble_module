@@ -33,7 +33,7 @@
 
 #if UART_DMA_MODE_EN
 	unsigned char uart_rx_irq = 0, uart_tx_irq = 0;
-	#define UART_RX_BUFF_SIZE      100
+	#define UART_RX_BUFF_SIZE      500
 	#define UART_TX_BUFF_SIZE      16
 
 	__attribute__((aligned(4))) unsigned char uart_rec_buff[UART_RX_BUFF_SIZE] = {0x00,0x00,0x00,0x00,}; // the first four byte is length to receive data.
@@ -84,9 +84,9 @@ void app_uart_test_start(void){
 #define RFID_DATA_ATTRIBUTE_HANDLE 29
 //		bls_att_pushNotifyData(RFID_DATA_ATTRIBUTE_HANDLE, uart_rec_buff, sizeof(uart_rec_buff));
 #if 1
-		unsigned char *data_ptr = (unsigned char *)&uart_rec_buff;
+		unsigned char *data_ptr = (unsigned char *)uart_rec_buff + 4;
 
-		unsigned char length = strlen(&uart_rec_buff[4])+4;
+		unsigned char length = strlen(&uart_rec_buff[4]);
 
 		while (length > 0)
 		{
@@ -95,7 +95,7 @@ void app_uart_test_start(void){
 			data_ptr += amount_to_send;
 			length -= amount_to_send;
 		}
-		while(!uart_Send(uart_rec_buff));
+//		while(!uart_Send(uart_rec_buff));
 //		memset(uart_rec_buff, 0, sizeof(uart_rec_buff));
 #endif
 		/*transmit buffer, the first four bytes is the length information of transmitting data.the DMA module will send the data based on the length.

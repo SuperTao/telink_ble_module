@@ -32,8 +32,8 @@ extern void user_init();
 
 _attribute_ram_code_ void irq_handler(void)
 {
-	irq_blt_sdk_handler ();
 	app_uart_test_irq_proc();
+	irq_blt_sdk_handler ();
 #if 0
 #if (HCI_ACCESS==HCI_USE_UART)
 	unsigned char irqS = reg_dma_rx_rdy0;
