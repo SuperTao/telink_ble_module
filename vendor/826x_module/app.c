@@ -199,6 +199,14 @@ void led_init(void)
 #endif
 }
 
+void rfid_wakeup_io_init(void)
+{
+	gpio_set_func(RFID_WAKEUP_IO, AS_GPIO);
+	gpio_set_input_en(RFID_WAKEUP_IO,0);
+	gpio_set_output_en(RFID_WAKEUP_IO,1);
+	gpio_write(RFID_WAKEUP_IO, false);
+}
+
 u32 tick_wakeup;
 int	mcu_uart_working;
 int	module_uart_working;
@@ -278,6 +286,7 @@ void app_power_management ()
 void user_init()
 {
 	app_uart_test_init();
+	rfid_wakeup_io_init();
 	blc_app_loadCustomizedParameters();  //load customized freq_offset cap value and tp value
 
 	REG_ADDR8(0x74) = 0x53;
@@ -450,5 +459,9 @@ void main_loop ()
 #endif
 	//  add spp UI task
 	app_power_management ();
+	gpio_write(RFID_WAKEUP_IO, false);
+	sleep_us(10000000);
+	gpio_write(RFID_WAKEUP_IO, true);
+	sleep_us(10000000);
 
 }

@@ -93,6 +93,8 @@ extern "C" {
 #define ON            						1
 #define OFF           						0
 
+#define RFID_WAKEUP_IO						GPIO_PC5
+
 
 
 //////////////////// PRINT DEBUG INFO ///////////////////////
