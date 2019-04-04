@@ -86,7 +86,8 @@ void app_uart_test_start(void){
 #if 1
 		unsigned char *data_ptr = (unsigned char *)uart_rec_buff + 4;
 
-		unsigned char length = strlen(&uart_rec_buff[4]);
+//		unsigned char length = sizeof(&uart_rec_buff[4]);
+		unsigned int length = *(unsigned int *)(uart_rec_buff);
 
 		while (length > 0)
 		{
