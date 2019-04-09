@@ -459,9 +459,9 @@ void main_loop ()
 #endif
 	//  add spp UI task
 	app_power_management ();
-	gpio_write(RFID_WAKEUP_IO, false);
-	sleep_us(10000000);
-	gpio_write(RFID_WAKEUP_IO, true);
-	sleep_us(10000000);
+//	gpio_write(RFID_WAKEUP_IO, false);
+//	sleep_us(10000000);
+//	gpio_write(RFID_WAKEUP_IO, true);
+//	sleep_us(10000000);
 
 }
