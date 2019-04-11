@@ -286,7 +286,7 @@ void app_power_management ()
 void user_init()
 {
 	app_uart_test_init();
-	rfid_wakeup_io_init();
+//	rfid_wakeup_io_init();
 	blc_app_loadCustomizedParameters();  //load customized freq_offset cap value and tp value
 
 	REG_ADDR8(0x74) = 0x53;
