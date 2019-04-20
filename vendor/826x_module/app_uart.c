@@ -32,10 +32,23 @@
 #define UART_DMA_MODE_EN     1  //1:dma mode ; ; ; 0: not dma mode
 
 #if UART_DMA_MODE_EN
-	unsigned char uart_rx_irq = 0, uart_tx_irq = 0;
-	#define UART_RX_BUFF_SIZE      500
+//#define UART_RX_BUFF_SIZE      2236
+#define UART_RX_BUFF_SIZE      2556
+#define UART_RX_TMP_BUFF_SIZE      508
 	#define UART_TX_BUFF_SIZE      16
+	typedef struct{
+		unsigned int dma_len;        // dma len must be 4 byte
+		unsigned char data[UART_RX_BUFF_SIZE];
+	}uart_data_t;
 
+	typedef struct{
+		unsigned int dma_len;        // dma len must be 4 byte
+		unsigned char data[UART_RX_TMP_BUFF_SIZE];
+	}uart_tmp_data_t;
+	unsigned char uart_rx_irq = 0, uart_tx_irq = 0;
+
+uart_data_t rec_buff = {0, {0, } };
+uart_tmp_data_t T_tmp_buf = {0, {0, } };
 	__attribute__((aligned(4))) unsigned char uart_rec_buff[UART_RX_BUFF_SIZE] = {0x00,0x00,0x00,0x00,}; // the first four byte is length to receive data.
 	__attribute__((aligned(4))) unsigned char uart_tx_buff[UART_TX_BUFF_SIZE]  = {0x0b,0x00,0x00,0x00,'t','e','l','i','n','k','-','s','e','m','i'}; // the first four byte is length to send data.
 #else
@@ -48,10 +61,10 @@ void app_uart_test_init(void){
 	//	uart_Init(9,13,PARITY_NONE,STOP_BIT_ONE); //set baud rate, parity bit and stop bit
 	//	uart_DmaModeInit(UART_DMA_TX_IRQ_EN, UART_DMA_RX_IRQ_EN);   // enable tx and rx interrupt
 //	CLK16M_UART115200;
-	uart_Init(9,13,PARITY_NONE,STOP_BIT_ONE);\
+	uart_Init(9,13,PARITY_NONE,STOP_BIT_ONE);
 	uart_DmaModeInit(UART_DMA_TX_IRQ_DIS, UART_DMA_RX_IRQ_EN);
 
-	uart_RecBuffInit(uart_rec_buff, UART_RX_BUFF_SIZE);  //set uart rev buffer and buffer size
+	uart_RecBuffInit((unsigned char *)&rec_buff, sizeof(rec_buff));  //set uart rev buffer and buffer size
 //	uart_txBuffInit(UART_TX_BUFF_SIZE);
 
 //	#if ((MCU_CORE_TYPE == MCU_CORE_8261)||(MCU_CORE_TYPE == MCU_CORE_8267)||(MCU_CORE_TYPE == MCU_CORE_8269))
@@ -78,17 +91,65 @@ void app_uart_test_init(void){
 void app_uart_test_start(void){
 #if UART_DMA_MODE_EN
 	if(uart_rx_irq){
-		uart_rx_irq = 0;
+//		uart_rx_irq = 0;
 		/*receive buffer,the first four bytes is the length information of received data.send the received data*/
 //		while(!uart_Send(uart_rec_buff));
 #define RFID_DATA_ATTRIBUTE_HANDLE 29
 //		bls_att_pushNotifyData(RFID_DATA_ATTRIBUTE_HANDLE, uart_rec_buff, sizeof(uart_rec_buff));
 #if 1
-		unsigned char *data_ptr = (unsigned char *)uart_rec_buff + 4;
+		unsigned char *data_ptr = rec_buff.data;
 
 //		unsigned char length = sizeof(&uart_rec_buff[4]);
-		unsigned int length = *(unsigned int *)(uart_rec_buff);
+		unsigned int length = rec_buff.dma_len;
+		unsigned char len[10] = {0x06, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x0a, 0x0d};
+		len[4] = (rec_buff.dma_len)/256/16;
+		if (len[4] > 9)
+			len[4] += ('a'-10);
+		else
+			len[4] += '0';
+		len[5] = (rec_buff.dma_len)/256%16;
+		if (len[5] > 9)
+			len[5] += ('a'-10);
+		else
+			len[5] += '0';
+		len[6] = (rec_buff.dma_len)%256/16;
+		if (len[6] > 9)
+			len[6] += ('a'-10);
+		else
+			len[6] += '0';
+		len[7] = ((rec_buff.dma_len)%256)%16;
+		if (len[7] > 9)
+			len[7] += ('a'-10);
+		else
+			len[7] += '0';
+		u32 total_len,buf_len,pos;
+				total_len=rec_buff.dma_len;
+				uart_Send((unsigned char *)len);
+				sleep_us(2000000);
+				while(1){
 
+					if(total_len > 500){
+						buf_len = 500;
+					}else{
+						buf_len = total_len;
+					}
+
+					memcpy(T_tmp_buf.data, (rec_buff.data + pos), buf_len);
+
+					T_tmp_buf.dma_len = buf_len;
+
+					pos 		+= buf_len;
+					total_len 	-= buf_len;
+
+					uart_Send( (unsigned char*)&T_tmp_buf);
+					if(total_len == 0){
+						uart_rx_irq = 0;
+						break;
+					}
+					sleep_us(2000000);
+				}
+
+/*
 		while (length > 0)
 		{
 			int amount_to_send = min((20), length);
@@ -96,6 +157,7 @@ void app_uart_test_start(void){
 			data_ptr += amount_to_send;
 			length -= amount_to_send;
 		}
+*/
 //		while(!uart_Send(uart_rec_buff));
 //		memset(uart_rec_buff, 0, sizeof(uart_rec_buff));
 #endif
@@ -121,6 +183,7 @@ _attribute_ram_code_ void app_uart_test_irq_proc(void){
 		irqS = uart_IRQSourceGet(); // get the irq source and clear the irq.
 		if(irqS & UARTRXIRQ){
 			uart_rx_irq = 1;
+
 		}
 //		if(irqS & UARTTXIRQ){
 //			uart_tx_irq++;
